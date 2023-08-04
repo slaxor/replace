@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+/*
 func TestSubvert(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -79,7 +80,7 @@ func TestSubvert(t *testing.T) {
 		})
 	}
 }
-
+*/
 /*
 	func TestToSnakeCase(t *testing.T) {
 		tests := []struct {
@@ -176,7 +177,7 @@ func TestNormalize(t *testing.T) {
 	}
 }
 
-func TestToMulti(t *testing.T) {
+func TestSubvert(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string

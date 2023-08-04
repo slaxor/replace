@@ -7,105 +7,14 @@ import (
 	"unicode"
 )
 
-func Subvert(oldName, newName string) func(string) string {
-	// oldSnake := ToSnakeCase(oldName)
-	// newSnake := ToSnakeCase(newName)
-	// oldCamel := ToCamelCase(oldName)
-	// newCamel := ToCamelCase(newName)
-	return func(s string) string {
-		// s = strings.ReplaceAll(s, oldName, newName)
-		// s = strings.ReplaceAll(s, strings.Title(oldName), strings.Title(newName))
-		// s = strings.ReplaceAll(s, strings.ToUpper(oldName), strings.ToUpper(newName))
-		// s = strings.ReplaceAll(s, strings.ToLower(oldName), strings.ToLower(newName))
-		// s = strings.ReplaceAll(s, oldSnake, newSnake)
-		// s = strings.ReplaceAll(s, oldCamel, newCamel)
-		s = ToMulti(s, oldName, newName)
-		return s
-	}
-}
-
-// func init() {
-// log.SetFlags(log.Lshortfile)
-// }
-
-func normalize(s string) string {
-	s = strings.ReplaceAll(s, " ", "_")
-	if strings.Contains(s, "_") {
-		return s
-	}
-	var words []string
-	var lastPos int
-	rs := []rune(s)
-
-	for i := 0; i < len(rs); i++ {
-		if i > 0 && unicode.IsUpper(rs[i]) {
-			words = append(words, s[lastPos:i])
-			lastPos = i
-		}
-	}
-
-	words = append(words, s[lastPos:])
-	return strings.Join(words, "_")
-}
-
-// ToSnakeCase converts a camel case string to snake case
-// func ToSnakeCase(s string) string {
-// return strings.ToLower(normalize(s))
-// }
-
-// func _ToSnakeCase(s string) string {
-// var result string
-// var words []string
-// var lastPos int
-// rs := []rune(s)
-
-// for i := 0; i < len(rs); i++ {
-// if i > 0 && unicode.IsUpper(rs[i]) {
-// words = append(words, s[lastPos:i])
-// lastPos = i
-// }
-// }
-
-// words = append(words, s[lastPos:])
-
-// for k, word := range words {
-// if k > 0 {
-// result += "_"
-// }
-// result += strings.ToLower(word)
-// }
-
-// return result
-// }
-
-// ToCamelCase converts a snake case string to camel case
-// func ToCamelCase(s string) string {
-// words := strings.FieldsFunc(s, func(r rune) bool { return r == '_' })
-
-// for i := 0; i < len(words); i++ {
-// words[i] = strings.Title(words[i])
-// }
-
-// return strings.Join(words, "")
-// }
-
-func isAllCaps(s string) bool {
-	for _, r := range s {
-		if !unicode.IsUpper(r) {
-			return false
-		}
-	}
-	return true
-}
-
-// ToMulti converts a string to the case of the match
+// Subvert converts a string to the case of the match
 // i = input string
 // o = old string
 // n = new string
 // one restriction is that the case of the first word of the match is
 // used for the replacement, so if you have a match of "foo Foo" it will
 // be replaced with "bar bar" and not "bar Bar"
-func ToMulti(i, o, n string) string {
+func Subvert(i, o, n string) string {
 	o = normalize(o)
 	n = normalize(n)
 	o = regexp.QuoteMeta(o) // I ask myself if it would be a nice feature to be able to pass a regexp as old string
@@ -150,9 +59,48 @@ func ToMulti(i, o, n string) string {
 			}
 		}
 		replacement = strings.Join(nws, joiner)
-
 		i = strings.Replace(i, wholeMatch, replacement, m[1])
 	}
-
 	return i
+}
+
+// SubvertBytes is a convenience function that uses []byte instead of
+// string as input and output
+// i = input []byte
+// o = old string
+// n = new string
+// one restriction is that the case of the first word of the match is
+// used for the replacement, so if you have a match of "foo Foo" it will
+// be replaced with "bar bar" and not "bar Bar"
+func SubvertBytes(i []byte, o, n string) []byte {
+	return []byte(Subvert(string(i), o, n))
+}
+
+func normalize(s string) string {
+	s = strings.ReplaceAll(s, " ", "_")
+	if strings.Contains(s, "_") {
+		return s
+	}
+	var words []string
+	var lastPos int
+	rs := []rune(s)
+
+	for i := 0; i < len(rs); i++ {
+		if i > 0 && unicode.IsUpper(rs[i]) {
+			words = append(words, s[lastPos:i])
+			lastPos = i
+		}
+	}
+
+	words = append(words, s[lastPos:])
+	return strings.Join(words, "_")
+}
+
+func isAllCaps(s string) bool {
+	for _, r := range s {
+		if !unicode.IsUpper(r) {
+			return false
+		}
+	}
+	return true
 }
