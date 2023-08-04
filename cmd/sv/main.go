@@ -17,25 +17,17 @@ func init() {
 func handlePanic() {
 	if r := recover(); r != nil {
 		_, fn, line, _ := runtime.Caller(3) // 2 steps up the stack frame
-		logMessage := fmt.Sprintf("[Panic Recovery] %s:%d - %v", fn, line, r)
+		logMessage := fmt.Sprintf("[Panic] %s:%d - %v", fn, line, r)
 		log.Print(logMessage)
 	}
 }
 func main() {
 	defer handlePanic()
 	var err error
-
-	var verbose bool
 	var inplace bool
-
-	pflag.BoolVarP(&verbose, "verbose", "v", false, "enable verbose mode")
 	pflag.BoolVarP(&inplace, "inplace", "i", false, "edit files in place")
-
-	// Parse the flags
 	pflag.Parse()
 
-	log.Printf("Verbose mode enabled: %t", verbose)
-	log.Printf("Inplace mode enabled: %t", inplace)
 	args := pflag.Args()
 	log.Printf("Args: %v", args)
 
@@ -59,8 +51,8 @@ func main() {
 		log.Fatal(err)
 	}
 	r := replace.SubvertBytes(i, o, n)
-	if inplace {
-		err = ioutil.WriteFile(args[3], r, 0644)
+	if inplace && len(args) == 3 {
+		err = ioutil.WriteFile(args[2], r, 0644)
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -4,6 +4,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/slaxor/replace v0.0.0-20230803085327-943327eaf0cc h1:n67t6poXvDcAikLx1BqwLZkQLX39J1dtwu9xQg1MDSY=
 github.com/slaxor/replace v0.0.0-20230803085327-943327eaf0cc/go.mod h1:nm154HJ5WwwhWw6fQQ8t8NoNT/JX2fEdoLtWII0P8/k=
+github.com/slaxor/replace v0.0.0-20230804121628-1c9ef3c50562 h1:0wiiBZNFNItS+zq471vdx+SqZwIGbVfVpVX/RY4XBdA=
+github.com/slaxor/replace v0.0.0-20230804121628-1c9ef3c50562/go.mod h1:nm154HJ5WwwhWw6fQQ8t8NoNT/JX2fEdoLtWII0P8/k=
 github.com/spf13/pflag v1.0.5 h1:iy+VFUOCP1a+8yFto/drg2CJ5u0yRoB7fZw3DKv/JXA=
 github.com/spf13/pflag v1.0.5/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
 github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=

@@ -3,7 +3,7 @@ module github.com/slaxor/replace/cmd/sv
 go 1.20
 
 require (
-	github.com/slaxor/replace v0.0.0-20230803085327-943327eaf0cc
+	github.com/slaxor/replace v0.0.0-20230804121628-1c9ef3c50562
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
 )
