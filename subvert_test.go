@@ -142,6 +142,7 @@ func TestSubvert(t *testing.T) {
 		}
 	}
 */
+
 func TestNormalize(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -224,7 +225,7 @@ func TestSubvert(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := ToMulti(tt.input, tt.old, tt.new)
+			result := Subvert(tt.input, tt.old, tt.new)
 			assert.Equal(t, tt.expected, result)
 			// if result != tt.expected {
 			// t.Errorf("ToMulti() %q, want %v", result, tt.expected)
