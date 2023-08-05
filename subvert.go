@@ -2,6 +2,8 @@ package replace
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
 	"regexp"
 	"strings"
 	"unicode"
@@ -32,6 +34,7 @@ func Subvert(i, o, n string) string {
 		var v []byte
 		var joiner string
 		wholeMatch := string(ib[m[0]:m[1]])
+		isPrivate := unicode.IsLower(rune(wholeMatch[0]))
 		var replacement string
 		for j := 2; j < len(m); j += 2 {
 			v = ib[m[j]:m[j+1]]
@@ -59,6 +62,9 @@ func Subvert(i, o, n string) string {
 			}
 		}
 		replacement = strings.Join(nws, joiner)
+		if isPrivate {
+			replacement = strings.ToLower(replacement[0:1]) + replacement[1:]
+		}
 		i = strings.Replace(i, wholeMatch, replacement, m[1])
 	}
 	return i
@@ -103,4 +109,40 @@ func isAllCaps(s string) bool {
 		}
 	}
 	return true
+}
+
+// SubvertFileContent replaces all occurrences of the old string with the new string in the file content.
+func SubvertFileContent(filePath string, o string, n string) error {
+	stat, err := os.Stat(filePath)
+	if err != nil {
+		return err
+	}
+	perm := stat.Mode().Perm()
+	file, err := os.OpenFile(filePath, os.O_RDWR, perm)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	content, err := ioutil.ReadAll(file)
+	if err != nil {
+		return err
+	}
+	newContent := Subvert(string(content), o, n)
+	if string(content) == newContent {
+		return nil
+	}
+	err = file.Truncate(0) // maybe a  bit dangerous
+	if err != nil {
+		return err
+	}
+	_, err = file.Seek(0, 0)
+	if err != nil {
+		return err
+	}
+	_, err = file.WriteString(newContent)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

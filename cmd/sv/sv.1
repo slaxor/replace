@@ -1,0 +1,38 @@
+.\" Manpage for sv
+.TH SV 1 "02 August 2023" "version 1.0" "SV man page"
+.SH NAME
+sv \- command for replacing string patterns
+.SH SYNOPSIS
+sv [\-a] <old_string> <new_string> <path>
+.SH DESCRIPTION
+sv is a command-line tool that recursively replaces string patterns in file contents and filenames within a specified directory.
+.SH OPTIONS
+.TP
+.BR \-a ", " \-\-all
+Includes all files and directories for replacement, including system files like .git.
+.TP
+.BR <old_string>
+The original string to be replaced.
+.TP
+.BR <new_string>
+The new string that will replace the old string.
+.TP
+.BR <path>
+The path to the directory where the replacement will occur.
+.SH EXAMPLES
+.TP
+Replace "old_foo" with "new_foo" in the current directory and subdirectories:
+.BR
+sv old_foo new_foo .
+.TP
+Replace "OldFoo" with "NewFoo" in the /home/user/project directory and subdirectories, including system directories:
+.BR
+sv -a OldFoo NewFoo /home/user/project
+.SH AUTHOR
+Written by Sascha Teske.
+.SH SEE ALSO
+The full documentation for
+.B sv
+is maintained as a Texinfo manual.
+.SH BUGS
+Report bugs to <sascha.teske@microprojects.de>.

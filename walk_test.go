@@ -1,7 +1,6 @@
 package replace
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"syscall"
@@ -10,121 +9,101 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func syncfs(fd int) error {
-	_, _, err := syscall.Syscall(306, uintptr(fd), 0, 0)
-	if err != 0 {
-		return err
+func setupFiles(t *testing.T, tempDir string, files []string) {
+	var err error
+	for _, file := range files[:5] { // for regular files
+		err := os.MkdirAll(filepath.Join(tempDir, filepath.Dir(file)), 0755)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = os.Create(filepath.Join(tempDir, file))
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
-	return nil
+
+	// Creating a device file
+	// err := syscall.Mknod(filepath.Join(tempDir, files[5]), 0600, int(unix.Mkdev(uint32(1), uint32(3)))) // /dev/null device file
+	// if err != nil {
+	// t.Fatal(err)
+	// }
+
+	// Creating a pipe
+	err = syscall.Mkfifo(filepath.Join(tempDir, files[5]), 0600)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
-func TestSubvertFileContent(t *testing.T) {
-	dir := t.TempDir()
-	tests := []struct {
-		name     string
-		file     string
-		perm     os.FileMode
-		content  []byte
-		o        string
-		n        string
-		expected []byte
+func TestRlist(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// Create test files and directories
+	allFiles := []string{
+		"test1.txt",
+		"test2.txt",
+		".git/ignore.txt",
+		"subdir/test3.txt",
+		"subdir/.hidden/test4.txt",
+		"pipe",
+	}
+
+	setupFiles(t, tempDir, allFiles)
+
+	cases := []struct {
+		name          string
+		exclusions    []string
+		expectedFiles []string // Expected files
 	}{
 		{
-			name:     "happy path",
-			file:     "test_happy_path.txt",
-			perm:     0640,
-			content:  []byte("This is a test string with old_string."),
-			o:        "old_string",
-			n:        "new_string",
-			expected: []byte("This is a test string with new_string."),
+			name:       "No exclusions",
+			exclusions: []string{},
+			expectedFiles: []string{
+				"test1.txt",
+				"test2.txt",
+				".git/ignore.txt",
+				"subdir/test3.txt",
+				"subdir/.hidden/test4.txt",
+			},
+		},
+		{
+			name:       "Exclude .git",
+			exclusions: []string{".git"},
+			expectedFiles: []string{
+				"test1.txt",
+				"test2.txt",
+				"subdir/test3.txt",
+				"subdir/.hidden/test4.txt",
+			},
+		},
+		{
+			name:       "Exclude hidden",
+			exclusions: []string{"*.hidden"},
+			expectedFiles: []string{
+				"test1.txt",
+				"test2.txt",
+				".git/ignore.txt",
+				"subdir/test3.txt",
+			},
+		},
+		{
+			name:          "Exclude all",
+			exclusions:    []string{"*"},
+			expectedFiles: []string{}, // all files excluded
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			f := filepath.Join(dir, tt.file)
-			err := ioutil.WriteFile(f, tt.content, tt.perm)
-			assert.NoError(t, err)
-			err = SubvertFileContent(f, tt.o, tt.n)
-			assert.NoError(t, err)
-			result, err := os.ReadFile(f)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.expected, result, "expected\n%s\nis not equal to\n%s\n", tt.expected, result)
-			// assert.FileModePerm(tt.perm, f)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			files, _, err := Rlist(tempDir, tc.exclusions)
+			if err != nil {
+				t.Fatal(err)
+			}
+			expectedFiles := make([]string, len(tc.expectedFiles))
+			for i, file := range tc.expectedFiles {
+				expectedFiles[i] = filepath.Join(tempDir, file)
+			}
+			assert.ElementsMatch(t, expectedFiles, files)
 		})
 	}
-}
-
-func TestWalkAndSubvert(t *testing.T) {
-	dir := t.TempDir()
-	subDir := filepath.Join(dir, "old_foo")
-	err := os.Mkdir(subDir, 0755)
-	assert.NoError(t, err)
-
-	testFile := filepath.Join(subDir, "test.txt")
-	err = ioutil.WriteFile(testFile, []byte("This is a string with old_foo and OldFoo"), 0644)
-	assert.NoError(t, err)
-
-	excludedDir := filepath.Join(dir, ".git")
-	err = os.Mkdir(excludedDir, 0755)
-	assert.NoError(t, err)
-
-	excludedFile := filepath.Join(excludedDir, "test.txt")
-	err = ioutil.WriteFile(excludedFile, []byte("This is a string with old_foo and OldFoo"), 0644)
-	assert.NoError(t, err)
-
-	err = WalkAndSubvert(dir, []string{".git"}, "old_foo", "new_foo")
-	assert.NoError(t, err)
-	// t.Run("Test subvert function application", func(t *testing.T) {
-	// })
-
-	t.Run("Test directory renaming", func(t *testing.T) {
-		t.Skip("Not implemented")
-		// Check if the directory was renamed
-		_, err = os.Stat(subDir)
-		assert.Error(t, err) // Expect an error because the directory should have been renamed
-
-		newSubDir := filepath.Join(dir, "new_foo")
-		_, err = os.Stat(newSubDir)
-		assert.NoError(t, err)
-	})
-
-	t.Run("Test file content replacement", func(t *testing.T) {
-		// Check if the file content was replaced
-		content, err := ioutil.ReadFile(testFile)
-		assert.NoError(t, err)
-		assert.Equal(t, "This is a string with new_foo and NewFoo", string(content))
-	})
-
-	t.Run("Test exclusion of directories", func(t *testing.T) {
-		t.Skip("Not implemented")
-		// Check if the excluded directory was not renamed
-		_, err = os.Stat(excludedDir)
-		assert.NoError(t, err)
-	})
-
-	t.Run("Test exclusion of file content replacement", func(t *testing.T) {
-		// Check if the excluded file content was not replaced
-		excludedContent, err := ioutil.ReadFile(excludedFile)
-		assert.NoError(t, err)
-		assert.Equal(t, "This is a string with old_foo and OldFoo", string(excludedContent))
-	})
-
-	t.Run("directory is renamed", func(t *testing.T) {
-		t.Skip("Not implemented")
-		_, err := os.Stat(subDir)
-		assert.Error(t, err)
-
-		newSubDir := filepath.Join(dir, "new_foo")
-		_, err = os.Stat(newSubDir)
-		assert.NoError(t, err)
-	})
-
-	t.Run("file is renamed and content is replaced", func(t *testing.T) {
-		t.Skip("Not implemented")
-		newTestFile := filepath.Join(dir, "new_foo", "new_foo.txt")
-		content, err := ioutil.ReadFile(newTestFile)
-		assert.NoError(t, err)
-		assert.Equal(t, "This is a string with new_foo and NewFoo", string(content))
-	})
 }

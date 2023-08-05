@@ -1,69 +1,61 @@
 package replace
 
-import (
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strings"
-)
-
-// SubvertFileContent replaces all occurrences of the old string with the new string in the file content.
-func SubvertFileContent(filePath string, o string, n string) error {
-	stat, err := os.Stat(filePath)
-	if err != nil {
-		return err
-	}
-	perm := stat.Mode().Perm()
-	file, err := os.OpenFile(filePath, os.O_RDWR, perm)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	content, err := ioutil.ReadAll(file)
-	if err != nil {
-		return err
-	}
-	newContent := Subvert(string(content), o, n)
-	if string(content) == newContent {
-		return nil
-	}
-	err = file.Truncate(0) // maybe a  bit dangerous
-	if err != nil {
-		return err
-	}
-	_, err = file.Seek(0, 0)
-	if err != nil {
-		return err
-	}
-	_, err = file.WriteString(newContent)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // TODO
 // SubvertPathname renames a file or directory by replacing the old name with the new name.
 // func SubvertPathname(filePath string, perm int, o string, n string) error {
 // }
 
-// WalkAndSubvert walks the path and subverts all files tha have the old string in them.
-func WalkAndSubvert(path string, excludes []string, o string, n string) error {
-	return filepath.Walk(path, func(fp string, info os.FileInfo, err error) error {
-		for _, exclude := range excludes {
-			if strings.Contains(fp, exclude) {
+import (
+	"os"
+	"path/filepath"
+)
+
+// Checks whether a path is excluded based on the exclusion list
+func isExcluded(path string, excl []string) bool {
+	for _, ex := range excl {
+		if matched, _ := filepath.Match(ex, path); matched {
+			return true
+		}
+	}
+	return false
+}
+
+// Rlist returns a list of files and directories in the given path.
+// The returned list of files and directories are relative to the given path.
+// excl is a list of glob patterns to exclude.
+func Rlist(path string, excl []string) (files []string, dirs []string, err error) {
+	err = filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		// Ignore the root path
+		if path == "." {
+			return nil
+		}
+		// Ignore specified paths
+		for _, exclusion := range excl {
+			if matched, _ := filepath.Match(exclusion, filepath.Base(path)); matched {
+				if info.IsDir() {
+					return filepath.SkipDir
+				}
 				return nil
 			}
 		}
-
-		// If it's a regular file, add it to the list
-		if info.Mode().IsRegular() {
-			err = SubvertFileContent(fp, o, n)
-			if err != nil {
-				return err
-			}
+		// Ignore device and pipe files
+		if (info.Mode()&os.ModeDevice) != 0 || (info.Mode()&os.ModeNamedPipe) != 0 {
+			return nil
 		}
+
+		if info.IsDir() {
+			dirs = append(dirs, path)
+		} else if info.Mode()&os.ModeSymlink != 0 {
+			files = append(files, path)
+		} else {
+			files = append(files, path)
+		}
+
 		return nil
 	})
+
+	return files, dirs, err
 }
