@@ -21,14 +21,6 @@ func setupFiles(t *testing.T, tempDir string, files []string) {
 			t.Fatal(err)
 		}
 	}
-
-	// Creating a device file
-	// err := syscall.Mknod(filepath.Join(tempDir, files[5]), 0600, int(unix.Mkdev(uint32(1), uint32(3)))) // /dev/null device file
-	// if err != nil {
-	// t.Fatal(err)
-	// }
-
-	// Creating a pipe
 	err = syscall.Mkfifo(filepath.Join(tempDir, files[5]), 0600)
 	if err != nil {
 		t.Fatal(err)
@@ -38,7 +30,6 @@ func setupFiles(t *testing.T, tempDir string, files []string) {
 func TestRlist(t *testing.T) {
 	tempDir := t.TempDir()
 
-	// Create test files and directories
 	allFiles := []string{
 		"test1.txt",
 		"test2.txt",

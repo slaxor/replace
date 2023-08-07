@@ -144,6 +144,13 @@ func TestSubvert(t *testing.T) {
 			o:    "old_string",
 			n:    "new_string",
 		},
+		{
+			name: "regex match",
+			i:    "open shut, outward_southward, overcomeSucceed, OvalShape, output signal",
+			exp:  "new string, new_string, newString, NewString, new string",
+			o:    "o[a-z]+ s[]a-z]+",
+			n:    "new_string",
+		},
 	}
 
 	for _, tt := range tests {

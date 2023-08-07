@@ -108,22 +108,20 @@ func stdoutAndStderrExec(fn func()) (string, string) {
 	}()
 	wo.Close()
 	we.Close()
-	o := <-outC
-	e := <-errC
-	return o, e
+	return <-outC, <-errC
 }
 
 func TestStdioExec(t *testing.T) {
 	t.Skip("Regularly testing test helpers seems a bit silly")
 	otest := strings.Repeat("out ", 10)
 	etest := strings.Repeat("err ", 10)
-	o, e := stdioExec(func() {
+	so, se := stdioExec(func() {
 		i, _ := ioutil.ReadAll(os.Stdin)
 		fmt.Fprintf(os.Stdout, "%s", i[:len(otest)])
 		fmt.Fprintf(os.Stderr, "%s", i[len(otest):])
 	}, otest+etest)
-	assert.Equal(t, otest, o)
-	assert.Equal(t, etest, e)
+	assert.Equal(t, otest, so)
+	assert.Equal(t, etest, se)
 }
 
 func stdioExec(fn func(), i string) (string, string) {
@@ -134,9 +132,9 @@ func stdioExec(fn func(), i string) (string, string) {
 
 func TestStdio(t *testing.T) {
 	os.Args = []string{"sv", "old_string", "new_string"}
-	o, e := stdioExec(main, "old_string")
-	assert.Equal(t, "new_string", o)
-	assert.Equal(t, "", e)
+	so, se := stdioExec(main, "old_string")
+	assert.Equal(t, "new_string", so)
+	assert.Equal(t, "", se)
 }
 
 func TestFile(t *testing.T) {
@@ -146,9 +144,9 @@ func TestFile(t *testing.T) {
 	f.WriteString("old_string")
 	os.Args = []string{"sv", "old_string", "new_string", testFile}
 
-	o, e := stdioExec(main, "old_string")
-	assert.Equal(t, "new_string", o)
-	assert.Equal(t, "", e)
+	so, se := stdioExec(main, "old_string")
+	assert.Equal(t, "new_string", so)
+	assert.Equal(t, "", se)
 }
 
 func TestFileInplace(t *testing.T) {
@@ -158,10 +156,10 @@ func TestFileInplace(t *testing.T) {
 	f.WriteString("old_string")
 	os.Args = []string{"sv", "-i", "old_string", "new_string", testFile}
 
-	o, e := stdoutAndStderrExec(main)
+	so, se := stdoutAndStderrExec(main)
 	newContent, _ := os.ReadFile(testFile)
-	assert.Equal(t, "", o)
-	assert.Equal(t, "", e)
+	assert.Equal(t, "", so)
+	assert.Equal(t, "", se)
 	assert.Equal(t, "new_string", string(newContent))
 }
 
@@ -178,9 +176,9 @@ func TestRecursive(t *testing.T) {
 	mkFakeProject(t, "OldString", tempDir, testFiles)
 	os.Args = []string{"sv", "-r", "old_string", "new_string", tempDir}
 
-	o, e := stdoutAndStderrExec(main)
-	assert.Equal(t, "", o)
-	assert.Equal(t, "", e)
+	so, se := stdoutAndStderrExec(main)
+	assert.Equal(t, "", so)
+	assert.Equal(t, "", se)
 	for _, tf := range testFiles {
 		f := filepath.Join(tempDir, tf)
 		newContent, _ := os.ReadFile(f)
@@ -205,9 +203,9 @@ func TestRecursiveAll(t *testing.T) {
 	mkFakeProject(t, "OldString", tempDir, testFiles)
 	os.Args = []string{"sv", "-r", "-a", "old_string", "new_string", tempDir}
 
-	o, e := stdoutAndStderrExec(main)
-	assert.Equal(t, "", o)
-	assert.Equal(t, "", e)
+	so, se := stdoutAndStderrExec(main)
+	assert.Equal(t, "", so)
+	assert.Equal(t, "", se)
 	for _, tf := range testFiles {
 		f := filepath.Join(tempDir, tf)
 		newContent, _ := os.ReadFile(f)
@@ -227,5 +225,50 @@ func mkFakeProject(t *testing.T, testString string, tempDir string, files []stri
 		}
 		f.WriteString(testString)
 		f.Close()
+	}
+}
+
+func resetArgs() {
+	recursive = false
+	all = false
+	inplace = false
+	enableRegex = false
+}
+
+func TestRegex(t *testing.T) {
+	tests := []struct {
+		name string
+		args []string
+		i    string
+		exp  string
+	}{
+		{
+			name: "enabled regex",
+			args: []string{"sv", "-e", "o[a-z]+_s[a-z]+", "new_string"},
+			i:    "open shut, outward_southward, overcomeSucceed, OvalShape, output signal",
+			exp:  "new string, new_string, newString, NewString, new string",
+		},
+		{
+			name: "diabled regex",
+			args: []string{"sv", "o[a-z]+_s[a-z]+", "new_string"},
+			i:    "open shut, outward_southward, overcomeSucceed, OvalShape, output signal",
+			exp:  "open shut, outward_southward, overcomeSucceed, OvalShape, output signal",
+		},
+		{
+			name: "diabled regex with a match anyway",
+			args: []string{"sv", "o[a-z]+_s[a-z]+", "new_string"},
+			i:    "open shut, outward_southward, o[a-z]+ s[a-z]+, OvalShape, output signal",
+			exp:  "open shut, outward_southward, new string, OvalShape, output signal",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resetArgs()
+			os.Args = tt.args
+			so, se := stdioExec(main, tt.i)
+			assert.Equal(t, tt.exp, so)
+			assert.Equal(t, "", se)
+		})
 	}
 }

@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
+	"regexp"
 
 	"github.com/slaxor/replace"
 	"github.com/spf13/pflag"
@@ -18,29 +18,37 @@ func init() {
 var recursive bool
 var all bool
 var inplace bool
+var enableRegex bool
 
 func init() {
-	log.Printf("Args: %v", os.Args)
 	pflag.BoolVarP(&recursive, "recursive", "r", false, "edit all files under the given directory, recursively (implies -i)")
 	pflag.BoolVarP(&all, "all", "a", false, "edit all files, normally skip hidden files")
 	pflag.BoolVarP(&inplace, "inplace", "i", false, "edit files in place")
+	pflag.BoolVarP(&enableRegex, "regex", "e", false, "enable for old string to be a regular expression")
 }
 
 func main() {
 	var err error
-	var inFile io.Reader
-	var i []byte
 	var fs []string
 	// var ds []string // Directories will be relevant for recursive mode when renaming directories
-
 	pflag.Parse()
 	args := pflag.Args()
-	if recursive {
+	if len(args) < 2 {
+		pflag.Usage()
+		os.Exit(255)
+	}
+	o := args[0]
+	if !enableRegex {
+		o = regexp.QuoteMeta(o)
+	}
+	n := args[1]
+
+	if recursive { // implies inplace = true
 		var excl []string
-		// inplace = true
 		if len(args) < 3 {
 			pflag.Usage()
-			os.Exit(1)
+			log.Printf("recursive: %t, arglen: %d", recursive, len(args))
+			os.Exit(255)
 		}
 		if all {
 			excl = []string{}
@@ -52,54 +60,52 @@ func main() {
 			log.Fatal(err)
 		}
 		for _, f := range fs {
-			subvertFile(f, args[0], args[1])
+			subvertFileInplace(f, o, n)
 		}
 	} else {
 		switch {
-		case len(args) < 2:
-			pflag.Usage()
-			os.Exit(1)
 		case len(args) == 2:
-			inFile = os.Stdin
-		case len(args) == 3:
-			inFile, err = os.Open(args[2])
-			if err != nil {
-				log.Fatal(err)
+			subvertStdin(o, n)
+		case len(args) > 2:
+			var fn func(string, string, string)
+			if inplace {
+				fn = subvertFileInplace
+			} else {
+				fn = subvertFile
 			}
-		}
 
-		o := args[0]
-		n := args[1]
-
-		if len(args) == 3 {
-			inFile, err = os.Open(args[2])
-			if err != nil {
-				log.Fatal(err)
+			for _, f := range args[2:] {
+				fn(f, o, n)
 			}
-		}
-		i, err = ioutil.ReadAll(inFile)
-		if err != nil {
-			log.Fatal(err)
-		}
-		r := replace.SubvertBytes(i, o, n)
-		if inplace && len(args) == 3 {
-			err = ioutil.WriteFile(args[2], r, 0644)
-			if err != nil {
-				log.Fatal(err)
-			}
-		} else {
-			fmt.Printf("%s", r)
 		}
 	}
 }
 
-func subvertFile(fileName string, o, n string) {
-	i, err := ioutil.ReadFile(fileName)
+func subvertStdin(o, n string) {
+	i, err := ioutil.ReadAll(os.Stdin)
 	if err != nil {
 		log.Fatal(err)
 	}
 	r := replace.SubvertBytes(i, o, n)
-	err = ioutil.WriteFile(fileName, r, 0644)
+	fmt.Printf("%s", r)
+}
+
+func subvertFile(f, o, n string) {
+	i, err := ioutil.ReadFile(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+	r := replace.SubvertBytes(i, o, n)
+	fmt.Printf("%s", r)
+}
+
+func subvertFileInplace(f, o, n string) {
+	i, err := ioutil.ReadFile(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+	r := replace.SubvertBytes(i, o, n)
+	err = ioutil.WriteFile(f, r, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
