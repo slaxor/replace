@@ -5,6 +5,12 @@ case-preserving search and replace operations on text, inspired by the
 Subvert command from [vim-abolish](https://github.com/tpope/vim-abolish)
 by Tim Pope.
 
+Smart means given `sv old_string new_string` replaces old_string ->
+new_string (of course), OldString -> NewString, old string ->
+new string, OLDSTRING -> NEWSTRING, etc.
+
+perhaps some of you find this helpful too. Let me know.
+
 ## Installation
 
 To install the package, use `go get`:
@@ -20,7 +26,7 @@ To install the CLI tool, clone the repository and build the binary:
 go install github.com/slaxor/replace/cmd/sv@master
 ```
 
-<!--Or even go to the realease page and fetch the binary of your choice -->
+Or even go to the realease page and fetch the binary of your choice
 
 ## Usage
 
@@ -44,7 +50,7 @@ func main() {
 
 Here's a basic example of using the CLI tool:
 
-`sv [-a] old_world new_world [/path/to/directory]`
+`sv -r old_world new_world /path/to/directory`
 
 This will recursively search for occurrences of "old_world" (in various casing styles) in all text files in the specified directory, and replace them with "new_world" (preserving the original casing style).
 By default, certain directories (like .git) are excluded from the search. Use the -a flag to include all directories.

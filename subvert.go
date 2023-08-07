@@ -19,7 +19,6 @@ import (
 func Subvert(i, o, n string) string {
 	o = normalize(o)
 	n = normalize(n)
-	o = regexp.QuoteMeta(o) // I ask myself if it would be a nice feature to be able to pass a regexp as old string
 	ows := strings.Split(o, `_`)
 	e := strings.Join(ows, `)([[:space:]_]*)(`)
 	e = fmt.Sprintf("(?ims)(%s)", e)

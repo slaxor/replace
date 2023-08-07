@@ -1,0 +1,21 @@
+pkgname=sv
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="A Go-based tool for replacing strings in files"
+arch=("any")
+url="https://github.com/slaxor/replace"
+license=('MIT')
+depends=('glibc')
+makedepends=('go')
+source=("$url/archive/v$pkgver.tar.gz")
+sha256sums=('')  # replace with the actual sha256sum of the tarball
+
+build() {
+    cd "$srcdir/$pkgname-$pkgver"
+    go build -o replace ./...
+}
+
+package() {
+    cd "$srcdir/$pkgname-$pkgver"
+    install -Dm755 replace "$pkgdir/usr/bin/replace"
+}
