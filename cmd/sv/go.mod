@@ -1,11 +1,11 @@
-module github.com/slaxor/replace/cmd/sv
+module codeberg.org/slaxor/replace/cmd/sv
 
 go 1.20
 
 require (
-	github.com/slaxor/replace v0.0.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
+	codeberg.org/slaxor/replace v0.0.0
 )
 
 require (

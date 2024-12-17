@@ -7,8 +7,8 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/slaxor/replace"
 	"github.com/spf13/pflag"
+	"codeberg.org/slaxor/replace"
 )
 
 func init() {
