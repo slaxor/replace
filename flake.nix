@@ -29,7 +29,7 @@
         { pkgs }:
         {
           default = pkgs.buildGoModule {
-            name = "e";
+            name = "sv";
             src = self;
             vendorHash = "sha256-TJ3lSQtW0E2JrznGVm8hOQGVpXjJyXY2guAxku2O9A4%3D";
             goSum = ./go.sum;
