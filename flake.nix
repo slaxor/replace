@@ -31,8 +31,7 @@
           default = pkgs.buildGoModule {
             name = "sv";
             src = self;
-            vendorHash = "sha256-TJ3lSQtW0E2JrznGVm8hOQGVpXjJyXY2guAxku2O9A4%3D";
-            goSum = ./go.sum;
+            vendorHash = "sha256-NUCnlwg4XMt5sd+8Eoj2rdn9qUjvajIjhDuMeF4iIX0=";
             subPackages = [ "cmd/sv" ];
           };
         }
