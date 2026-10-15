@@ -1,4 +1,4 @@
-module codeberg.org/slaxor/replace
+module github.com/slaxor/replace
 
 go 1.20
 

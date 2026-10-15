@@ -16,14 +16,14 @@ perhaps some of you find this helpful too. Let me know.
 To install the package, use `go get`:
 
 ```shell
-go get codeberg.org/slaxor/replace
+go get github.com/slaxor/replace
 ```
 
 If you don't care for the package. You can just install the command.
 To install the CLI tool, clone the repository and build the binary:
 
 ```shell
-go install codeberg.org/slaxor/replace/cmd/sv@master
+go install github.com/slaxor/replace/cmd/sv@master
 ```
 
 Or even go to the realease page and fetch the binary of your choice
@@ -35,7 +35,7 @@ Or even go to the realease page and fetch the binary of your choice
 Here's a basic example of using the package in your own Go code:
 
 ```go
-import "codeberg.org/slaxor/replace"
+import "github.com/slaxor/replace"
 
 func main() {
     input := "Hello, old world!"
